@@ -1,7 +1,7 @@
 {
   example = {
     lsp.servers = {
-      "*".settings = {
+      "*".config = {
         enable = true;
         root_markers = [ ".git" ];
         capabilities.textDocument.semanticTokens = {
@@ -11,7 +11,7 @@
       luals.enable = true;
       clangd = {
         enable = true;
-        settings = {
+        config = {
           cmd = [
             "clangd"
             "--background-index"
@@ -220,5 +220,38 @@
           ++ assertSuffix "rust-analyzer" rust_analyzer.package
           ++ assertSuffix "haskell-language-server" hls.package
         );
+    };
+
+  # Assert that we don't have any redundant custom modules
+  custom-server-modules =
+    { lib, options, ... }:
+    let
+      rootPrefix = toString ../../../. + "/";
+      customDir = ../../../modules/lsp/servers/custom;
+      serverOptions = (opt: opt.type.getSubOptions opt.loc) options.lsp.servers;
+      modules = lib.pipe customDir [
+        builtins.readDir
+        (lib.filterAttrs (name: _: !(serverOptions ? ${lib.strings.removeSuffix ".nix" name})))
+        (lib.mapAttrsToList (
+          name: type: customDir + "/${name}" + lib.optionalString (type == "directory") "/default.nix"
+        ))
+        (builtins.filter (lib.strings.hasSuffix ".nix"))
+        (builtins.filter lib.pathExists)
+        (map (module: lib.strings.removePrefix rootPrefix (toString module)))
+      ];
+    in
+    {
+      test.buildNixvim = false;
+
+      assertions = [
+        {
+          assertion = modules == [ ];
+          message = ''
+            The following custom modules do not correspond to an LSP server option:${
+              lib.concatMapStrings (module: "\n- ${module}") modules
+            }
+          '';
+        }
+      ];
     };
 }

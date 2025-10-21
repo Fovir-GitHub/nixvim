@@ -2,13 +2,13 @@
 {
   name ? "the language server",
   package ? null,
-  settings ? null,
-  pkgs ? { },
+  config ? null,
 }@args:
 {
   lib,
   name,
   config,
+  pkgs,
   ...
 }:
 let
@@ -64,14 +64,30 @@ in
       '';
     };
 
-    settings = lib.mkOption {
+    packages.prefix = lib.mkOption {
+      type = types.listOf types.package;
+      description = "Packages to prefix onto the PATH.";
+      default = [ ];
+      visible = false;
+      internal = true;
+    };
+
+    packages.suffix = lib.mkOption {
+      type = types.listOf types.package;
+      description = "Packages to suffix onto the PATH.";
+      default = [ ];
+      visible = false;
+      internal = true;
+    };
+
+    config = lib.mkOption {
       type = with types; attrsOf anything;
       description = ''
-        Configurations for ${displayName}. ${settings.extraDescription or ""}
+        Configurations for ${displayName}. ${args.config.extraDescription or ""}
       '';
       default = { };
       example =
-        settings.example or {
+        args.config.example or {
           cmd = [
             "clangd"
             "--background-index"
@@ -88,7 +104,23 @@ in
     };
   };
 
+  config = {
+    packages = lib.mkIf (config.package != null) {
+      ${if config.packageFallback then "suffix" else "prefix"} = [
+        config.package
+      ];
+    };
+  };
+
   imports = [
     ./server-renames.nix
-  ];
+  ]
+  # We cannot use `config._module.args.name` in imports, since `config` causes inf-rec.
+  # Therefore we can only import custom modules when we have an externally supplied `name`.
+  ++ lib.optionals (args ? name) (
+    lib.filter lib.pathExists [
+      ./custom/${args.name}.nix
+      ./custom/${args.name}/default.nix
+    ]
+  );
 }

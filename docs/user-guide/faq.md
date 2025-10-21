@@ -7,6 +7,30 @@ Using a plugin not supported by nixvim, but packaged in nixpkgs is straightforwa
 - Register the plugin through `extraPlugins`: `extraPlugins = [pkgs.vimPlugins."<plugin name>"]`.
 - Configure the plugin through `extraConfigLua`: `extraConfigLua = "require('my-plugin').setup({foo = "bar"})";`
 
+## How do I use a plugin not yet merged into NixVim or temporarily modify one
+
+Copy the module expression formatted like this into a file:
+
+```nix
+{ lib, ... }:
+lib.nixvim.plugins.mkNeovimPlugin {
+  # ...
+}
+```
+
+Import it into your NixVim configuration and configure it:
+```nix
+{
+  # Remove this `programs.nixvim` wrapper for standalone configurations
+  programs.nixvim = {
+    # You could also substitute the filename with the module expression
+    imports = [ ./my-plugin.nix ];
+
+    plugins.my-plugin.enable = true;
+  };
+}
+```
+
 ## How do I use a plugin not packaged in nixpkgs
 
 This is straightforward too, you can add the following to `extraPlugins` for a plugin hosted on GitHub:
@@ -66,7 +90,7 @@ This usually means one of two things:
 When building nixvim using flakes and our ["standalone mode"][standalone], we usually recommend _not_ declaring a "follows" for `inputs.nixvim`.
 This is so that nixvim is built against the same nixpkgs revision we're using in our test suite.
 
-If you are building nixvim using the NixOS, home-manager, or nix-darwin modules then we advise that you keep your nixpkgs lock as close as possible to ours.
+If you are building nixvim using the NixOS, Home Manager, or nix-darwin modules then we advise that you keep your nixpkgs lock as close as possible to ours.
 
 > [!TIP]
 > Once [#1784](https://github.com/nix-community/nixvim/issues/1784) is implemented, there will be alternative ways to achieve this using the module system.

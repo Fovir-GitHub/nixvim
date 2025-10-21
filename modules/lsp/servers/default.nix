@@ -12,14 +12,22 @@ let
   cfg = config.lsp;
   oldCfg = config.plugins.lsp;
 
-  # Import `server.nix` and apply args
-  # For convenience, we set a default here for args.pkgs
-  mkServerModule = args: lib.modules.importApply ./server.nix ({ inherit pkgs; } // args);
-
   # Create a submodule type from `server.nix`
   # Used as the type for both the freeform `lsp.servers.<name>`
   # and the explicitly declared `lsp.servers.*` options
-  mkServerType = args: types.submodule (mkServerModule args);
+  mkServerType =
+    args:
+    types.submoduleWith {
+      # Server modules have a `config` option, so we must use
+      # shorthandOnlyDefinesConfig to avoid confusing the module system.
+      shorthandOnlyDefinesConfig = true;
+      modules = [
+        (lib.modules.importApply ./server.nix args)
+        {
+          _module.args.pkgs = pkgs;
+        }
+      ];
+    };
 
   # Create a server option
   # Used below for the `lsp.servers.*` options
@@ -103,7 +111,7 @@ in
       '';
       default = { };
       example = {
-        "*".settings = {
+        "*".config = {
           root_markers = [ ".git" ];
           capabilities.textDocument.semanticTokens = {
             multilineTokenSupport = true;
@@ -112,7 +120,7 @@ in
         lua_ls.enable = true;
         clangd = {
           enable = true;
-          settings = {
+          config = {
             cmd = [
               "clangd"
               "--background-index"
@@ -146,9 +154,8 @@ in
       ];
 
       packages = lib.pipe enabledServers [
-        (builtins.filter (server: server ? package))
-        (builtins.groupBy (server: if server.packageFallback then "suffix" else "prefix"))
-        (builtins.mapAttrs (_: builtins.catAttrs "package"))
+        (builtins.catAttrs "packages")
+        (builtins.zipAttrsWith (_: builtins.concatLists))
       ];
     in
     {
@@ -161,11 +168,11 @@ in
             server:
             let
               luaName = toLuaObject server.name;
-              luaSettings = toLuaObject server.settings;
-              wrap = server.__settingsWrapper or lib.id;
+              luaConfig = toLuaObject server.config;
+              wrap = server.__configWrapper or lib.id;
             in
             [
-              (lib.mkIf (server.settings != { }) "vim.lsp.config(${luaName}, ${wrap luaSettings})")
+              (lib.mkIf (server.config != { }) "vim.lsp.config(${luaName}, ${wrap luaConfig})")
               (lib.mkIf (server.activate or false) "vim.lsp.enable(${luaName})")
             ];
         in
@@ -182,13 +189,13 @@ in
 
             local __setup = ${lib.foldr lib.id "{ capabilities = __lspCapabilities() }" oldCfg.setupWrappers}
 
-            local __wrapSettings = function(settings)
-              if settings == nil then
-                settings = __setup
+            local __wrapConfig = function(cfg)
+              if cfg == nil then
+                cfg = __setup
               else
-                settings = vim.tbl_extend("keep", settings, __setup)
+                cfg = vim.tbl_extend("keep", cfg, __setup)
               end
-              return settings
+              return cfg
             end
           ''
           ++ builtins.concatMap mkServerConfig enabledServers
