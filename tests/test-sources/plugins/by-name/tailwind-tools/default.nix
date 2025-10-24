@@ -1,6 +1,12 @@
 {
   empty = {
     plugins.tailwind-tools.enable = true;
+
+    test.warnings = expect: [
+      (expect "count" 1)
+      (expect "any" "Nixvim (plugins.tailwind-tools): This plugin has been deprecated.")
+      (expect "any" "Consider disabling it or switching to an alternative.")
+    ];
   };
 
   defaults = {
@@ -41,6 +47,10 @@
         };
       };
     };
+
+    test.warnings = expect: [
+      (expect "count" 1)
+    ];
   };
 
   example = {
@@ -57,5 +67,9 @@
         };
       };
     };
+
+    test.warnings = expect: [
+      (expect "count" 1)
+    ];
   };
 }

@@ -23,6 +23,12 @@ let
 
     # 2025-04-01 php-cs-fixer is marked as broken
     "php-cs-fixer"
+
+    # 2025-10-12 build failure (luaformatter depends on broken antlr-runtime-cpp)
+    "luaformatter"
+
+    # 2025-10-12 dependency mbedtls is marked as insecure
+    "haxe"
   ]
   ++ lib.optionals (hostPlatform.isLinux && hostPlatform.isAarch64) [
     # "tabnine"
@@ -61,6 +67,11 @@ let
     "rustaceanvim"
   ]
   ++ lib.optionals hostPlatform.isDarwin [
+    # 2025-10-20 dependency rubyPackages.nokogiri build failure
+    # gumbo.c:32:10: fatal error: 'nokogiri_gumbo.h' file not found
+    "actionlint"
+    "ruby3.3-solargraph"
+
     # Transient dependency `kicad-base` is marked broken
     # https://github.com/NixOS/nixpkgs/pull/403987
     "atopile"
@@ -84,6 +95,10 @@ let
     "wl-clipboard" # wayland
   ]
   ++ lib.optionals (hostPlatform.isDarwin && hostPlatform.isx86_64) [
+    # 2025-10-20 build failure
+    # error: concurrency is only available in macOS 10.15.0 or newer
+    "sourcekit-lsp"
+
     # As of 2024-07-31, dmd is broken on x86_64-darwin
     # https://github.com/NixOS/nixpkgs/pull/331373
     "dmd"
@@ -110,9 +125,17 @@ let
 
     # 2025-09-16 zig/zig-hook is marked as broken
     # https://github.com/NixOS/nixpkgs/commit/bc725b12b2595951a3f4b112d59716d30b41001a
+    "zf"
     "zls"
   ]
   ++ lib.optionals (hostPlatform.isDarwin && hostPlatform.isAarch64) [
+    # 2025-10-20: build failure
+    # error: 'to_chars' is unavailable: introduced in macOS 13.3 unknown
+    "mesonlsp"
+
+    # 2025-10-20: dependency mlton build failure
+    "smlfmt"
+
     # As of 2025-07-25, zig-zlint is failing on aarch64-darwin
     "zig-zlint"
 
