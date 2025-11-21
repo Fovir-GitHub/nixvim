@@ -1,18 +1,33 @@
+/**
+  Construct Nixvim's section of the lib: `lib.nixvim`.
+
+  This function requires the final extended lib (as produced by `./overlay.nix`)
+  and should not usually be imported directly.
+
+  The flake output `<nixvim>.lib.nixvim` provides an instance of Nixvim's lib section.
+
+  # Inputs
+
+  `flake`
+  : The nixvim flake.
+
+  `lib`
+  : The final extended lib.
+*/
 {
   lib,
   flake,
-  _isExtended ? false,
-  _nixvimTests ? false,
 }:
 lib.makeExtensible (
   self:
   let
     # Used when importing parts of our lib
     call = lib.callPackageWith {
-      inherit call self;
-      # TODO: this would be much simpler if `lib` & `self` were kept explicitly separate
-      # Doing so should also improve overridability and simplify bootstrapping.
-      lib = if _isExtended then lib else lib.extend flake.lib.overlay;
+      inherit
+        call
+        self
+        lib
+        ;
     };
   in
   {
@@ -25,7 +40,7 @@ lib.makeExtensible (
     modules = call ./modules.nix { inherit flake; };
     options = call ./options.nix { };
     plugins = call ./plugins { };
-    utils = call ./utils.nix { inherit _nixvimTests; } // call ./utils.internal.nix { };
+    utils = call ./utils.nix { } // call ./utils.internal.nix { };
 
     # Top-level helper aliases:
     # TODO: deprecate some aliases

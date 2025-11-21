@@ -12,7 +12,12 @@ let
     extraSpecialArgs.pkgs = pkgsForTest;
   };
 
-  disabledTests = [
+  disabledPackages = [
+    # 2025-11-15 dependency swift is broken
+    # https://github.com/NixOS/nixpkgs/issues/461474
+    "sourcekit-lsp"
+    "swift-format"
+
     # 2025-10-12 dependency mbedtls is marked as insecure
     "haxe"
   ]
@@ -54,6 +59,18 @@ let
     "rustaceanvim"
   ]
   ++ lib.optionals hostPlatform.isDarwin [
+    # 2025-11-16 dependencies pyarrow and kvazaar are broken
+    "aider.nvim"
+
+    # 2025-11-16 dependency pyarrow is broken
+    "vectorcode"
+
+    # 2025-11-16 fish is broken
+    "direnv"
+    "direnv.vim"
+    "fish"
+    "fish-lsp"
+
     # 2025-10-24 dependency wayland is not available on darwin
     "qtdeclarative"
 
@@ -81,6 +98,13 @@ let
     "wl-clipboard" # wayland
   ]
   ++ lib.optionals (hostPlatform.isDarwin && hostPlatform.isx86_64) [
+    # 2025-11-16 dependency libsigsegv is broken
+    "texlive"
+    "texlive-combined-medium"
+
+    # 2025-11-16 dependency prelude is broken
+    "idris2-lsp"
+
     # 2025-10-20 build failure
     # error: concurrency is only available in macOS 10.15.0 or newer
     "sourcekit-lsp"
@@ -101,9 +125,6 @@ let
 
     # No hash for system
     "verible"
-
-    # 2025-06-24 build failure
-    "gleam"
 
     # 2025-09-16 zig/zig-hook is marked as broken
     # https://github.com/NixOS/nixpkgs/commit/bc725b12b2595951a3f4b112d59716d30b41001a
@@ -133,7 +154,7 @@ let
     "verible"
   ];
 
-  isEnabled = p: !(builtins.elem (lib.getName p) disabledTests);
+  isEnabled = p: !(builtins.elem (lib.getName p) disabledPackages);
   isAvailable = lib.meta.availableOn hostPlatform;
 
   # Collects all visible options, including sub options

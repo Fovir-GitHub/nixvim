@@ -11,8 +11,12 @@ rec {
   };
 
   formatter-packages = {
-    swift_format = if !stdenv.isDarwin then sType.darwinOnly else swift-format;
-    swiftlint = if !stdenv.isDarwin then sType.darwinOnly else swiftlint;
+    # 2025-11-15 dependency swift is broken
+    # https://github.com/NixOS/nixpkgs/issues/461474
+    swift = sType.broken;
+    swift_format = sType.broken;
+    swiftformat = sType.broken;
+    swiftlint = sType.broken;
 
     # 2025-10-12 build failure on Darwin
     smlfmt = if stdenv.isDarwin then sType.broken else smlfmt;
@@ -129,6 +133,7 @@ rec {
     pyproject-fmt = python313Packages.pyproject-parser;
     inherit (python313Packages) python-ly;
     qmlformat = libsForQt5.qt5.qtdeclarative;
+    racketfmt = racket;
     inherit (python313Packages) reorder-python-imports;
     ruff_fix = ruff;
     ruff_format = ruff;
